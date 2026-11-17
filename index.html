@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海外综合Launcher - 隐私弹窗配置</title>
+<style>
+  :root{
+    --navy-top:#0b1b3a;
+    --navy-side:#0e2145;
+    --navy-side-hover:#17315c;
+    --blue:#1677ff;
+    --blue-hover:#4096ff;
+    --page-bg:#f4f6f9;
+    --card-bg:#ffffff;
+    --text:#303540;
+    --text-sub:#8a909c;
+    --border:#e6e9ef;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    font-size:13px;color:var(--text);background:var(--page-bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  /* ---------- 顶部导航 ---------- */
+  .topbar{
+    height:48px;background:var(--navy-top);color:#fff;display:flex;align-items:center;
+    justify-content:space-between;padding:0 20px 0 18px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:.5px}
+  .brand-mark{width:26px;height:26px;display:block}
+  .top-right{display:flex;align-items:center;gap:18px}
+  .top-icon{width:18px;height:18px;color:#cfd8e8;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .top-icon:hover{color:#fff}
+  .top-icon svg{width:18px;height:18px}
+  .user-name{font-size:13px;color:#e8edf6}
+
+  /* ---------- 布局 ---------- */
+  .layout{display:flex;min-height:calc(100vh - 48px)}
+  .sidebar{
+    width:146px;flex:0 0 146px;background:var(--navy-side);color:#b9c6dc;
+    padding:10px 0 40px;display:flex;flex-direction:column;
+  }
+  .nav-item{
+    height:36px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 14px;font-size:12.5px;cursor:pointer;user-select:none;
+  }
+  .nav-item:hover{background:var(--navy-side-hover);color:#fff}
+  .chev{width:8px;height:8px;border-right:1.5px solid #8fa1bf;border-bottom:1.5px solid #8fa1bf;transform:rotate(45deg);transition:transform .2s;margin-top:-3px}
+  .nav-item.open .chev{transform:rotate(-135deg);margin-top:3px}
+  .submenu{display:none}
+  .submenu.show{display:block}
+  .sub-item{height:33px;display:flex;align-items:center;padding:0 14px 0 26px;font-size:12px;color:#9fb0cc;cursor:pointer}
+  .sub-item:hover{color:#fff;background:var(--navy-side-hover)}
+  .sub-item.active{background:var(--blue);color:#fff}
+  .side-foot{margin-top:auto;padding:12px 16px;color:#7b8dab;cursor:pointer}
+  .side-foot svg{width:16px;height:16px}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:22px 22px 0}
+  .content{width:100%;max-width:1260px;flex:1}
+  .card{
+    background:var(--card-bg);border-radius:6px;box-shadow:0 1px 3px rgba(15,35,70,.06);
+    padding:0 22px 18px;margin-bottom:18px;
+  }
+  .card-head{
+    height:56px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--border);
+  }
+  .card-title{font-size:14px;font-weight:600}
+  .head-actions{display:flex;gap:8px}
+  .btn{
+    height:28px;padding:0 14px;border-radius:4px;font-size:12px;line-height:1;
+    border:1px solid #d9dee7;background:#fff;color:#4b5566;transition:all .15s;
+  }
+  .btn:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn-primary:hover{background:var(--blue-hover);border-color:var(--blue-hover);color:#fff}
+  .btn:active{transform:scale(.97)}
+  .card-body{padding-top:20px}
+  .section-label{font-size:14px;font-weight:600;margin-bottom:12px}
+
+  /* ---------- 应用选择 ---------- */
+  .radio-row{display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:26px;padding-left:2px}
+  .radio{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#4b5566;cursor:pointer}
+  .radio input{appearance:none;width:14px;height:14px;border:1px solid #c6cdd9;border-radius:50%;margin:0;position:relative;cursor:pointer;flex:0 0 auto}
+  .radio input:checked{border-color:var(--blue);background:#fff}
+  .radio input:checked::after{content:"";position:absolute;inset:3px;background:var(--blue);border-radius:50%}
+
+  /* ---------- 弹窗配置列表（统一结构） ---------- */
+  .config-list{display:flex;flex-direction:column;gap:16px}
+  .config-row{
+    display:flex;align-items:flex-start;gap:34px;flex-wrap:wrap;
+    padding-bottom:16px;border-bottom:1px dashed #eef1f5;
+  }
+  .config-row:last-child{border-bottom:0;padding-bottom:0}
+  /* 图片区固定宽度（=两张图 132*2+gap10），保证各行说明文字首字符对齐；图片本身左对齐 */
+  .thumbs{display:flex;gap:10px;flex:0 0 274px;width:274px;align-items:flex-start}
+  /* 所有预览图统一尺寸：132 x 76 */
+  .thumb{
+    width:132px;height:76px;border-radius:3px;overflow:hidden;position:relative;
+    background:#1a2230;border:1px solid #dfe3ea;cursor:zoom-in;flex:0 0 132px;
+  }
+  .thumb svg{display:block;width:132px;height:76px}
+  .thumb.cmp-thumb{background:#1a2230}
+  .thumb.cmp-thumb .cmp-popup{position:absolute;top:0;left:0;transform-origin:top left}
+  .thumb:hover{box-shadow:0 2px 8px rgba(20,40,80,.18)}
+
+  .row-desc{min-width:180px;padding-top:22px;flex:0 0 190px}
+  .row-desc .name{font-size:12px;color:#4b5566;line-height:1.6}
+  .row-desc .sub{font-size:12px;color:var(--text-sub);margin-top:2px}
+  .row-desc .cmp-tag{
+    display:inline-block;font-size:10px;line-height:16px;padding:0 6px;border-radius:3px;
+    background:#eaf3ff;color:var(--blue);font-weight:500;margin-top:6px;
+  }
+  .country-field{padding-top:14px;flex:1;min-width:260px;max-width:420px}
+  .fake-input{
+    height:32px;border:1px solid #e3e7ee;background:#f7f8fa;border-radius:4px;
+    display:flex;align-items:center;padding:0 10px;color:#a9b0bd;font-size:12px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .fake-input.filled{color:#4b5566;background:#fff}
+  .field-hint{font-size:11px;color:var(--text-sub);margin-top:6px;line-height:1.5}
+
+  /* ---------- CMP 弹窗本体（截图2 还原，780x420） ---------- */
+  .cmp-popup{
+    width:780px;height:420px;background:#1d2735;color:#fff;flex:0 0 auto;
+  }
+  .cmp-popup-title{text-align:center;font-size:19px;font-weight:700;padding:24px 0 20px}
+  .cmp-popup-body{display:flex;height:340px;padding:0 28px 20px}
+  .cmp-popup-left{width:510px;padding-right:28px;border-right:1px solid rgba(255,255,255,.14)}
+  .cmp-popup-right{width:190px;padding-left:28px;display:flex;flex-direction:column;gap:11px}
+  .cmp-popup h4{font-size:15px;margin-bottom:10px}
+  .cmp-popup p{font-size:12.5px;line-height:1.45;color:#d5dce6}
+  .cmp-popup .divider{margin:16px 0 14px}
+  .cmp-popup-btn{
+    height:39px;display:flex;align-items:center;justify-content:center;
+    background:#2b3647;border:1px solid #3b475a;border-radius:5px;font-size:12.5px;color:#e8edf5;
+  }
+  .cmp-popup-btn.white{background:#f0f1f3;color:#1d2735;border-color:#f0f1f3}
+
+  /* ---------- 页脚 ---------- */
+  .footer{text-align:center;color:#a0a7b3;font-size:11px;padding:8px 0 16px}
+  .service-avatar{
+    position:fixed;right:18px;bottom:56px;width:34px;height:34px;border-radius:50%;
+    background:#e8edf5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='12' r='6' fill='%23f2b8a2'/%3E%3Cpath d='M5 30c1-7 5-10 11-10s10 3 11 10' fill='%234a6fa5'/%3E%3C/svg%3E") center/cover;
+    border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;
+  }
+
+  /* ---------- 弹窗 ---------- */
+  .mask{position:fixed;inset:0;background:rgba(10,20,40,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .mask.show{display:flex}
+  .modal{
+    background:#fff;border-radius:8px;width:560px;max-width:100%;max-height:90vh;
+    display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.2);
+  }
+  .modal.wide{width:920px}
+  .modal-head{height:52px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex:0 0 auto}
+  .modal-title{font-size:15px;font-weight:600}
+  .modal-close{border:0;background:none;font-size:20px;color:#9aa2b1;line-height:1;padding:4px}
+  .modal-close:hover{color:#333}
+  .modal-body{padding:20px;overflow:auto}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;flex:0 0 auto}
+  .form-label{font-size:13px;font-weight:600;margin-bottom:10px}
+  .scheme-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .scheme-btn{
+    border:1px solid #d9dee7;background:#fff;border-radius:4px;padding:6px 10px;
+    font-size:11.5px;color:#5a6373;
+  }
+  .scheme-btn.active{border-color:var(--blue);background:#f0f7ff;color:var(--blue)}
+  .search-box{height:34px;border:1px solid #d9dee7;border-radius:4px;display:flex;align-items:center;gap:8px;padding:0 10px;margin-bottom:12px}
+  .search-box svg{width:14px;height:14px;color:#9aa2b1;flex:0 0 auto}
+  .search-box input{border:0;outline:0;flex:1;font-size:12px;color:var(--text)}
+  .country-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11.5px;color:var(--text-sub)}
+  .link-btn{border:0;background:none;color:var(--blue);font-size:11.5px;padding:0 4px}
+  .link-btn:hover{text-decoration:underline}
+  .country-grid{
+    border:1px solid var(--border);border-radius:4px;max-height:260px;overflow:auto;
+    display:grid;grid-template-columns:1fr 1fr;gap:0 12px;padding:6px 10px;
+  }
+  .check-row{display:flex;align-items:center;gap:8px;padding:7px 2px;font-size:12px;cursor:pointer;border-bottom:1px solid #f2f4f7}
+  .check-row:last-child,.check-row:nth-last-child(2){border-bottom:0}
+  .check-row input{appearance:none;width:15px;height:15px;border:1px solid #c6cdd9;border-radius:3px;margin:0;position:relative;cursor:pointer;flex:0 0 auto}
+  .check-row input:checked{background:var(--blue);border-color:var(--blue)}
+  .check-row input:checked::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .check-row .code{margin-left:auto;color:#a0a7b3;font-size:11px}
+  .selected-box{margin-top:16px;background:#f7f9fc;border-radius:4px;padding:12px}
+  .selected-box .info-key{font-size:12px;color:var(--text-sub);margin-bottom:8px}
+  .chip-list{display:flex;flex-wrap:wrap;gap:8px}
+  .country-chip{
+    display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;
+    background:#f0f5ff;border:1px solid #d6e4ff;border-radius:13px;font-size:11.5px;color:#3a5a8c;
+  }
+  .country-chip i{width:5px;height:5px;border-radius:50%;background:var(--blue)}
+  .chip-empty{color:#a9b0bd;font-size:12px}
+  .toast{
+    position:fixed;left:50%;top:64px;transform:translate(-50%,-14px);z-index:100;
+    background:rgba(28,38,56,.94);color:#fff;padding:9px 18px;border-radius:5px;font-size:12px;
+    opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .preview-stage{background:#15191f;position:relative;width:100%;height:500px;border-radius:5px;overflow:hidden}
+  .preview-close-hint{text-align:center;font-size:11px;color:var(--text-sub);padding-top:10px}
+
+  @media (max-width:900px){
+    .sidebar{width:120px;flex-basis:120px}
+    .country-grid{grid-template-columns:1fr}
+    .row-desc{flex-basis:100%;padding-top:12px}
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+      <path d="M2 20L9.3 6L13 13L16.5 6L24 20H19.5L13 9.2L6.5 20H2Z" fill="#fff"/>
+      <path d="M8.5 20L13 11.5L17.5 20H13L11.6 17H14.4L13 14.6L11.6 17H10.4L8.5 20Z" fill="#7fb2ff"/>
+    </svg>
+    <span>海外综合Launcher</span>
+  </div>
+  <div class="top-right">
+    <span class="top-icon" title="权限">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.5-3.6 2.8-5.5 5.5-5.5s5 1.9 5.5 5.5"/><path d="M17 7h5M19.5 4.5v5"/></svg>
+    </span>
+    <span class="top-icon" title="首页">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/></svg>
+    </span>
+    <span class="user-name">郭韩利</span>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- 左侧菜单 -->
+  <aside class="sidebar">
+    <div class="nav-item" data-toggle="m1"><span>分区投放</span><i class="chev"></i></div>
+    <div class="submenu" id="m1"><div class="sub-item">区域配置</div><div class="sub-item">投放规则</div></div>
+    <div class="nav-item" data-toggle="m2"><span>预览管理</span><i class="chev"></i></div>
+    <div class="submenu" id="m2"><div class="sub-item">预览设备</div><div class="sub-item">预览记录</div></div>
+    <div class="nav-item" data-toggle="m3"><span>资源管理</span><i class="chev"></i></div>
+    <div class="submenu" id="m3"><div class="sub-item">媒资库</div><div class="sub-item">媒资包</div></div>
+    <div class="nav-item open" data-toggle="m4"><span>系统管理</span><i class="chev"></i></div>
+    <div class="submenu show" id="m4">
+      <div class="sub-item">搜索配置</div>
+      <div class="sub-item">机型管理</div>
+      <div class="sub-item">国家/地区管理</div>
+      <div class="sub-item active">隐私弹窗配置</div>
+      <div class="sub-item">终端配置</div>
+      <div class="sub-item">设置页面模板</div>
+      <div class="sub-item">设置页面配置</div>
+      <div class="sub-item">合规模白名单</div>
+    </div>
+    <div class="nav-item" data-toggle="m5"><span>LiveTV投放计划</span><i class="chev"></i></div>
+    <div class="submenu" id="m5"><div class="sub-item">计划列表</div></div>
+    <div class="nav-item" data-toggle="m6"><span>Web配置管理</span><i class="chev"></i></div>
+    <div class="submenu" id="m6"><div class="sub-item">Web配置</div></div>
+    <div class="nav-item" data-toggle="m7"><span>自动续策略</span><i class="chev"></i></div>
+    <div class="submenu" id="m7"><div class="sub-item">策略列表</div></div>
+    <div class="side-foot" title="收起菜单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="main">
+    <div class="content">
+      <section class="card">
+        <div class="card-head">
+          <span class="card-title">隐私弹窗配置</span>
+          <div class="head-actions">
+            <button class="btn" data-toast="已刷新隐私弹窗配置">刷新</button>
+            <button class="btn btn-primary" id="editBtn">编辑</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="section-label">选择应用:</div>
+          <div class="radio-row" role="radiogroup" aria-label="选择应用">
+            <label class="radio"><input type="radio" name="app">Tcl-channel</label>
+            <label class="radio"><input type="radio" name="app">MovieArk</label>
+            <label class="radio"><input type="radio" name="app">LiveTV</label>
+            <label class="radio"><input type="radio" name="app">Tcl-Channel-V(5.9-6.6)</label>
+            <label class="radio"><input type="radio" name="app">Tcl-Channel-V6.7</label>
+            <label class="radio"><input type="radio" name="app" checked>MovieArkLauncher</label>
+            <label class="radio"><input type="radio" name="app">tvplus</label>
+            <label class="radio"><input type="radio" name="app">IPTV+</label>
+          </div>
+
+          <div class="section-label">选择对应国家的弹窗设置:</div>
+          <div class="config-list" id="configList">
+
+            <!-- 行1：选择（两张预览图，与截图一致） -->
+            <div class="config-row" data-scheme="choose">
+              <div class="thumbs">
+                <div class="thumb" data-preview="privacy" role="button" tabindex="0" aria-label="放大查看隐私政策弹窗预览">
+                  <svg viewBox="0 0 132 76" aria-label="隐私政策弹窗缩略图">
+                    <rect width="132" height="76" fill="#2b1c22"/>
+                    <rect x="10" y="8" width="112" height="60" rx="3" fill="#1f2632"/>
+                    <text x="66" y="17" fill="#fff" font-size="5" text-anchor="middle" font-weight="bold">Privacy Policy</text>
+                    <rect x="16" y="22" width="58" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="26" width="62" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="30" width="48" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="34" width="55" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="38" width="40" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="42" width="52" height="1.3" fill="#8b96a8"/>
+                    <rect x="84" y="25" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="36" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="47" width="32" height="8" rx="1.5" fill="#e8ebf1"/>
+                    <rect x="16" y="57" width="100" height="1" fill="#3d4759"/>
+                    <rect x="16" y="60" width="60" height="1.2" fill="#7b8697"/>
+                  </svg>
+                </div>
+                <div class="thumb" data-preview="ads" role="button" tabindex="0" aria-label="放大查看个性化广告弹窗预览">
+                  <svg viewBox="0 0 132 76" aria-label="个性化广告弹窗缩略图">
+                    <rect width="132" height="76" fill="#2b1c22"/>
+                    <rect x="10" y="8" width="112" height="60" rx="3" fill="#1f2632"/>
+                    <text x="66" y="17" fill="#fff" font-size="5" text-anchor="middle" font-weight="bold">Personalized Ads</text>
+                    <rect x="16" y="22" width="60" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="26" width="54" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="30" width="62" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="34" width="46" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="38" width="58" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="42" width="38" height="1.3" fill="#8b96a8"/>
+                    <rect x="84" y="25" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="36" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="47" width="32" height="8" rx="1.5" fill="#e8ebf1"/>
+                    <rect x="16" y="57" width="100" height="1" fill="#3d4759"/>
+                    <rect x="16" y="60" width="60" height="1.2" fill="#7b8697"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="row-desc">
+                <div class="name">隐私政策弹窗+个性化广告</div>
+                <div class="sub">选择</div>
+              </div>
+              <div class="country-field">
+                <div class="fake-input" data-country-display="choose">请选择国家</div>
+                <div class="field-hint">选择国家启用该国家对应的隐私弹窗和个性化广告弹窗</div>
+              </div>
+            </div>
+
+            <!-- 行2：默认关闭 -->
+            <div class="config-row" data-scheme="off">
+              <div class="thumbs">
+                <div class="thumb" data-preview="privacy" role="button" tabindex="0" aria-label="放大查看隐私弹窗预览">
+                  <svg viewBox="0 0 132 76" aria-label="隐私弹窗缩略图">
+                    <rect width="132" height="76" fill="#2b1c22"/>
+                    <rect x="10" y="8" width="112" height="60" rx="3" fill="#1f2632"/>
+                    <text x="66" y="17" fill="#fff" font-size="5" text-anchor="middle" font-weight="bold">Privacy Policy</text>
+                    <rect x="16" y="22" width="58" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="26" width="62" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="30" width="48" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="34" width="55" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="38" width="40" height="1.3" fill="#8b96a8"/>
+                    <rect x="84" y="25" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="36" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="47" width="32" height="8" rx="1.5" fill="#e8ebf1"/>
+                    <rect x="16" y="54" width="100" height="1" fill="#3d4759"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="row-desc">
+                <div class="name">隐私政策弹窗+个性化广告</div>
+                <div class="sub">默认关闭</div>
+              </div>
+              <div class="country-field">
+                <div class="fake-input" data-country-display="off">请选择国家</div>
+                <div class="field-hint">选择国家启用该国家对应的隐私弹窗和个性化广告弹窗</div>
+              </div>
+            </div>
+
+            <!-- 行3：默认开启 -->
+            <div class="config-row" data-scheme="on">
+              <div class="thumbs">
+                <div class="thumb" data-preview="privacy" role="button" tabindex="0" aria-label="放大查看隐私弹窗预览">
+                  <svg viewBox="0 0 132 76" aria-label="隐私弹窗缩略图">
+                    <rect width="132" height="76" fill="#1a1d26"/>
+                    <rect x="10" y="8" width="112" height="60" rx="3" fill="#1f2632"/>
+                    <text x="66" y="17" fill="#fff" font-size="5" text-anchor="middle" font-weight="bold">Privacy Policy</text>
+                    <rect x="16" y="22" width="58" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="26" width="62" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="30" width="48" height="1.3" fill="#aab4c4"/>
+                    <rect x="16" y="34" width="55" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="38" width="40" height="1.3" fill="#8b96a8"/>
+                    <rect x="16" y="42" width="52" height="1.3" fill="#8b96a8"/>
+                    <rect x="84" y="25" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="36" width="32" height="8" rx="1.5" fill="#39445a"/>
+                    <rect x="84" y="47" width="32" height="8" rx="1.5" fill="#e8ebf1"/>
+                    <rect x="16" y="57" width="100" height="1" fill="#3d4759"/>
+                    <rect x="16" y="60" width="60" height="1.2" fill="#7b8697"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="row-desc">
+                <div class="name">隐私政策弹窗+个性化广告</div>
+                <div class="sub">默认开启</div>
+              </div>
+              <div class="country-field">
+                <div class="fake-input" data-country-display="on">请选择国家</div>
+                <div class="field-hint">选择国家启用该国家对应的隐私弹窗和个性化广告弹窗</div>
+              </div>
+            </div>
+
+            <!-- 行4：CMP方案（新增，预览图与其他行统一 132x76） -->
+            <div class="config-row" data-scheme="cmp">
+              <div class="thumbs">
+                <div class="thumb cmp-thumb" data-preview="cmp" role="button" tabindex="0" aria-label="放大查看 CMP 弹窗预览">
+                  <div class="cmp-popup" id="miniPopup">
+                    <div class="cmp-popup-title">we care about your privacy</div>
+                    <div class="cmp-popup-body">
+                      <div class="cmp-popup-left">
+                        <h4>Review and manage your privacy setting</h4>
+                        <p>With your consent, we and our 28 partners may store and access information on your device (such as device IDs), to provide personalised advertising, advertising measurement,and service development to enhance your experience. This is accomplished through the processing of personal data collected from browsing data stored in SDKs. Some vendors process user data based on their legitimate interests; you can grant or withdraw consent, or object to processing based on legitimate interests at any time by clicking the 'Manage' button. These choices will be signed to our partners and will not affect your browsing experience.</p>
+                        <div class="divider"></div>
+                        <h4>We and our partners process data to provide:</h4>
+                        <p>Store and/or access information on a device;Use limited data to select advertising;Create profiles for personalised advertising;Use profiles to select personalised advertising;Measure advertising performance;Understand audiences</p>
+                      </div>
+                      <div class="cmp-popup-right">
+                        <div class="cmp-popup-btn">Accept All</div>
+                        <div class="cmp-popup-btn">Essential Cookies Only</div>
+                        <div class="cmp-popup-btn">Manage</div>
+                        <div class="cmp-popup-btn white">List of Vendors</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row-desc">
+                <div class="name">隐私政策弹窗：CMP方案</div>
+                <div class="cmp-tag">Consent Management Platform</div>
+              </div>
+              <div class="country-field">
+                <div class="fake-input" data-country-display="cmp">请选择国家</div>
+                <div class="field-hint">选择国家启用该国家对应的 CMP 隐私政策弹窗</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="footer">Copyright © 2020 雷鸟科技 V7.3.0</div>
+  </main>
+</div>
+
+<div class="service-avatar" title="在线客服" data-toast="客服功能仅在正式环境开放"></div>
+
+<!-- 编辑弹窗：选择配置方案 + 国家多选 -->
+<div class="mask" id="editMask" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="editTitle">编辑隐私弹窗配置</span>
+      <button class="modal-close" data-close aria-label="关闭">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-label">选择应用:</div>
+      <div class="radio-row" style="margin-bottom:18px" role="radiogroup" aria-label="弹窗选择应用">
+        <label class="radio"><input type="radio" name="mApp">Tcl-channel</label>
+        <label class="radio"><input type="radio" name="mApp">MovieArk</label>
+        <label class="radio"><input type="radio" name="mApp">LiveTV</label>
+        <label class="radio"><input type="radio" name="mApp" checked>MovieArkLauncher</label>
+        <label class="radio"><input type="radio" name="mApp">IPTV+</label>
+      </div>
+      <div class="form-label">选择配置方案:</div>
+      <div class="scheme-row" id="schemeRow">
+        <button class="scheme-btn" data-scheme="choose">隐私政策弹窗+个性化广告（选择）</button>
+        <button class="scheme-btn" data-scheme="off">默认关闭</button>
+        <button class="scheme-btn" data-scheme="on">默认开启</button>
+        <button class="scheme-btn" data-scheme="cmp">隐私政策弹窗：CMP方案</button>
+      </div>
+      <div class="form-label" id="countryLabel">选择对应配置国家:</div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+        <input id="countrySearch" type="text" placeholder="搜索国家 / 地区、国家代码" aria-label="搜索国家">
+      </div>
+      <div class="country-toolbar">
+        <span id="countText">已选择 0 个国家</span>
+        <span><button class="link-btn" id="selectAll">全选</button> | <button class="link-btn" id="clearAll">清空</button></span>
+      </div>
+      <div class="country-grid" id="countryGrid"></div>
+      <div class="selected-box">
+        <div class="info-key">当前选择</div>
+        <div class="chip-list" id="modalChips" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close>取消</button>
+      <button class="btn btn-primary" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 大图预览弹窗 -->
+<div class="mask" id="previewMask" role="dialog" aria-modal="true" aria-label="弹窗效果预览">
+  <div class="modal wide">
+    <div class="modal-head">
+      <span class="modal-title" id="previewTitle">弹窗效果预览</span>
+      <button class="modal-close" data-close aria-label="关闭">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="preview-stage" id="previewStage"></div>
+      <div class="preview-close-hint">按 Esc 或点击关闭按钮退出预览</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var COUNTRIES = [
+    { name:'中国', en:'China', code:'cn-cn' },
+    { name:'美国', en:'United States', code:'en-us' },
+    { name:'英国', en:'United Kingdom', code:'en-gb' },
+    { name:'德国', en:'Germany', code:'de-de' },
+    { name:'法国', en:'France', code:'fr-fr' },
+    { name:'日本', en:'Japan', code:'ja-jp' },
+    { name:'韩国', en:'Korea', code:'ko-kr' },
+    { name:'巴西', en:'Brazil', code:'pt-br' },
+    { name:'印度', en:'India', code:'en-in' },
+    { name:'俄罗斯', en:'Russia', code:'ru-ru' },
+    { name:'意大利', en:'Italy', code:'it-it' },
+    { name:'西班牙', en:'Spain', code:'es-es' },
+    { name:'墨西哥', en:'Mexico', code:'es-mx' },
+    { name:'印度尼西亚', en:'Indonesia', code:'id-id' },
+    { name:'泰国', en:'Thailand', code:'th-th' },
+    { name:'越南', en:'Vietnam', code:'vi-vn' },
+    { name:'土耳其', en:'Turkey', code:'tr-tr' },
+    { name:'沙特阿拉伯', en:'Saudi Arabia', code:'ar-sa' },
+    { name:'澳大利亚', en:'Australia', code:'en-au' },
+    { name:'加拿大', en:'Canada', code:'en-ca' }
+  ];
+  var SCHEME_NAMES = {
+    choose:'隐私政策弹窗+个性化广告（选择）',
+    off:'默认关闭',
+    on:'默认开启',
+    cmp:'CMP方案'
+  };
+  var state = {
+    choose: ['cn-cn'],
+    off: [],
+    on: ['cn-cn'],
+    cmp: ['de-de','fr-fr','en-gb'],
+    editing: 'cmp'
+  };
+
+  var $ = function(s, r){ return (r||document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  function countryByCode(code){
+    return COUNTRIES.filter(function(c){ return c.code === code; })[0];
+  }
+  function chipHTML(code){
+    var c = countryByCode(code);
+    return c ? '<span class="country-chip"><i></i>' + c.name + ' ' + c.en + ' ' + c.code + '</span>' : '';
+  }
+  function renderDisplays(){
+    $$('[data-country-display]').forEach(function(el){
+      var codes = state[el.getAttribute('data-country-display')];
+      if(codes.length){
+        el.textContent = codes.map(function(code){
+          var c = countryByCode(code);
+          return c ? c.name + c.code : code;
+        }).join('、');
+        el.classList.add('filled');
+      }else{
+        el.textContent = '请选择国家';
+        el.classList.remove('filled');
+      }
+    });
+  }
+
+  /* ---------- CMP 预览图统一缩放到 132x76 ---------- */
+  function fitMiniPopup(){
+    var popup = $('#miniPopup');
+    if(popup) popup.style.transform = 'scale(' + (132 / 780) + ')';
+  }
+
+  var toastTimer;
+  function toast(msg){
+    var el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+  }
+
+  /* ---------- 侧边菜单 ---------- */
+  $$('.nav-item[data-toggle]').forEach(function(item){
+    item.addEventListener('click', function(){
+      var sub = $('#' + item.getAttribute('data-toggle'));
+      item.classList.toggle('open');
+      sub.classList.toggle('show');
+    });
+  });
+
+  /* ---------- 应用与配置行联动 ---------- */
+  // MovieArkLauncher 仅可配置：默认开启 + CMP方案；其他应用显示全部四项
+  var APP_SCHEMES = { 'MovieArkLauncher': ['on','cmp'] };
+  var ALL_SCHEMES = ['choose','off','on','cmp'];
+  function schemesForApp(app){ return APP_SCHEMES[app] || ALL_SCHEMES; }
+  function selectedApp(selector){
+    var el = $$(selector).filter(function(r){ return r.checked; })[0];
+    return el ? el.parentElement.textContent.trim() : '';
+  }
+  function applyAppFilter(){
+    var show = schemesForApp(selectedApp('input[name="app"]'));
+    $$('.config-row').forEach(function(row){
+      row.style.display = show.indexOf(row.getAttribute('data-scheme')) >= 0 ? '' : 'none';
+    });
+  }
+  function filterSchemeButtons(app){
+    var show = schemesForApp(app);
+    $$('.scheme-btn').forEach(function(b){
+      b.style.display = show.indexOf(b.getAttribute('data-scheme')) >= 0 ? '' : 'none';
+    });
+  }
+  $$('input[name="app"]').forEach(function(r){
+    r.addEventListener('change', applyAppFilter);
+  });
+
+  /* ---------- 编辑弹窗 ---------- */
+  function renderCountryGrid(filter){
+    var q = (filter || '').trim().toLowerCase();
+    var selected = state[state.editing];
+    var list = COUNTRIES.filter(function(c){
+      return !q || c.name.indexOf(q) >= 0 || c.en.toLowerCase().indexOf(q) >= 0 || c.code.indexOf(q) >= 0;
+    });
+    $('#countryGrid').innerHTML = list.map(function(c){
+      return '<label class="check-row">' +
+        '<input type="checkbox" value="' + c.code + '"' + (selected.indexOf(c.code) >= 0 ? ' checked' : '') + '>' +
+        '<span>' + c.name + '</span><span class="code">' + c.en + ' · ' + c.code + '</span></label>';
+    }).join('') || '<div style="padding:18px;color:#a0a7b3;font-size:12px">未找到匹配的国家</div>';
+    updateSelected();
+  }
+  function updateSelected(){
+    var codes = $$('#countryGrid input:checked').map(function(i){ return i.value; });
+    $('#countText').textContent = '已选择 ' + codes.length + ' 个国家';
+    $('#modalChips').innerHTML = codes.length
+      ? codes.map(chipHTML).join('')
+      : '<span class="chip-empty">暂未选择国家</span>';
+  }
+  function selectScheme(scheme){
+    state.editing = scheme;
+    $$('.scheme-btn').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-scheme') === scheme);
+    });
+    $('#editTitle').textContent = '编辑隐私弹窗配置 · ' + SCHEME_NAMES[scheme];
+    $('#countryLabel').textContent = scheme === 'cmp' ? '选择对应配置国家（CMP 方案）:' : '选择对应配置国家:';
+    $('#countrySearch').value = '';
+    renderCountryGrid('');
+  }
+  // 按当前编辑弹窗中的应用过滤方案按钮，并保证所选方案可见
+  function syncModalSchemes(){
+    var app = selectedApp('input[name="mApp"]');
+    filterSchemeButtons(app);
+    var visible = schemesForApp(app);
+    if(visible.indexOf(state.editing) < 0){
+      selectScheme(visible[0]);
+    }
+  }
+  $('#editBtn').addEventListener('click', function(){
+    // 同步主页面应用到编辑弹窗
+    var app = selectedApp('input[name="app"]');
+    $$('input[name="mApp"]').forEach(function(r){
+      r.checked = (r.parentElement.textContent.trim() === app);
+    });
+    syncModalSchemes();
+    $('#editMask').classList.add('show');
+  });
+  $$('.scheme-btn').forEach(function(b){
+    b.addEventListener('click', function(){ selectScheme(b.getAttribute('data-scheme')); });
+  });
+  $$('input[name="mApp"]').forEach(function(r){
+    r.addEventListener('change', syncModalSchemes);
+  });
+  $('#countrySearch').addEventListener('input', function(e){ renderCountryGrid(e.target.value); });
+  $('#countryGrid').addEventListener('change', updateSelected);
+  $('#selectAll').addEventListener('click', function(){
+    $$('#countryGrid input').forEach(function(i){ i.checked = true; });
+    updateSelected();
+  });
+  $('#clearAll').addEventListener('click', function(){
+    $$('#countryGrid input').forEach(function(i){ i.checked = false; });
+    updateSelected();
+  });
+  $('#saveBtn').addEventListener('click', function(){
+    state[state.editing] = $$('#countryGrid input:checked').map(function(i){ return i.value; });
+    renderDisplays();
+    $('#editMask').classList.remove('show');
+    toast(SCHEME_NAMES[state.editing] + ' 已保存，已配置 ' + state[state.editing].length + ' 个国家');
+  });
+
+  /* ---------- 预览弹窗 ---------- */
+  function openPreview(type){
+    var stage = $('#previewStage');
+    var titles = {
+      cmp:'CMP 弹窗效果预览',
+      privacy:'隐私政策弹窗效果预览',
+      ads:'个性化广告弹窗效果预览'
+    };
+    $('#previewTitle').textContent = titles[type] || '弹窗效果预览';
+    if(type === 'cmp'){
+      var src = $('#miniPopup').cloneNode(true);
+      src.removeAttribute('id');
+      src.style.cssText = 'position:absolute;left:50%;top:50%;margin-left:-390px;margin-top:-210px;transform:none;box-shadow:0 10px 40px rgba(0,0,0,.5)';
+      stage.innerHTML = '<div style="position:absolute;inset:0;background:linear-gradient(180deg,#151a22,#1c212a)"></div><div style="position:absolute;inset:0;background:rgba(0,0,0,.55)"></div>';
+      stage.appendChild(src);
+    }else{
+      var heading = type === 'ads' ? 'Personalized Ads' : 'Privacy Policy';
+      var btn3 = type === 'ads' ? 'Manage Preferences' : 'Agree';
+      stage.innerHTML =
+        '<div style="position:absolute;inset:0;background:linear-gradient(180deg,#151a22,#1c212a)"></div>' +
+        '<div style="position:absolute;inset:0;background:rgba(0,0,0,.55)"></div>' +
+        '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:660px;height:380px;background:#202938;border-radius:8px;color:#fff;padding:30px 36px;font-size:14px;line-height:1.7">' +
+        '<div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:24px">' + heading + '</div>' +
+        '<div style="width:62%;float:left;color:#c6d0df">With your consent, we and our partners may store and access information on your device (such as device IDs) to provide personalised advertising, advertising measurement and service development to enhance your experience. You can grant or withdraw your consent at any time.</div>' +
+        '<div style="width:32%;float:right;display:flex;flex-direction:column;gap:12px">' +
+        '<div class="cmp-popup-btn">Accept All</div><div class="cmp-popup-btn">Essential Only</div><div class="cmp-popup-btn white">' + btn3 + '</div></div>' +
+        '</div>';
+    }
+    $('#previewMask').classList.add('show');
+  }
+  $$('[data-preview]').forEach(function(el){
+    function go(){ openPreview(el.getAttribute('data-preview')); }
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+  });
+
+  /* ---------- 通用关闭 / Toast ---------- */
+  $$('.mask').forEach(function(mask){
+    mask.addEventListener('click', function(e){
+      if(e.target === mask || e.target.closest('[data-close]')) mask.classList.remove('show');
+    });
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') $$('.mask.show').forEach(function(m){ m.classList.remove('show'); });
+  });
+  $$('[data-toast]').forEach(function(el){
+    el.addEventListener('click', function(){ toast(el.getAttribute('data-toast')); });
+  });
+
+  /* ---------- 初始化 ---------- */
+  renderDisplays();
+  applyAppFilter();
+  fitMiniPopup();
+  window.addEventListener('resize', fitMiniPopup);
+})();
+</script>
+</body>
+</html>
